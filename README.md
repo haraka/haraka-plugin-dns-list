@@ -5,7 +5,7 @@
 
 # haraka-plugin-template
 
-Clone me, to create a new plugin!
+Clone me, to create a new Haraka plugin!
 
 # Template Instructions
 

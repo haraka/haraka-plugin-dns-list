@@ -18,8 +18,13 @@ sed -i '' \
     -e "s/template\.ini/$1.ini/" \
     index.js
 
+tee Changes.md <<EO_CHANGE
+## 1.0.0 - $(date +%Y-%m-%d)
+
+- Initial release
+EO_CHANGE
 git mv config/template.ini "config/$1.ini"
-git add package.json README.md index.js test config
+git add package.json Changes.md README.md index.js test config
 git commit -m "renamed template to $1"
 npm install
 npm run lint && npm test || exit 1
