@@ -34,3 +34,19 @@ describe('load_template_ini', function () {
     done()
   })
 })
+
+describe('uses text fixtures', function () {
+  it('sets up a connection', function (done) {
+    this.connection = fixtures.connection.createConnection({})
+    assert.ok(this.connection.server)
+    done()
+  })
+
+  it('sets up a transaction', function (done) {
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.transaction = fixtures.transaction.createTransaction({})
+    // console.log(this.connection.transaction)
+    assert.ok(this.connection.transaction.header)
+    done()
+  })
+})
