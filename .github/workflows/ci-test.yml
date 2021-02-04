@@ -1,6 +1,6 @@
-name: Plugin Tests
+name: Tests
 
-on: [ push, pull_request ]
+on: [ push ]
 
 jobs:
 
@@ -10,32 +10,23 @@ jobs:
 
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
-        node-version: [10.x, 12.x, 14.x]
+        os:
+          - ubuntu-latest
+          - windows-latest
+        node-version:
+          - 10
+          - 12
+          - 14
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v1
-      name: Checkout Plugin
-      with:
-        fetch-depth: 1
-
-    - uses: actions/setup-node@v1
-      name: Use Node.js ${{ matrix.node-version }}
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      name: Node ${{ matrix.node-version }} on ${{ matrix.os }}
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: npm install
-      run: npm install
-
-    - name: Run test suite
-      run: npm run test
-
+    - run: npm install
+    - run: npm test
       env:
         CI: true
-
-    # services:
-    #   redis:
-    #     image: redis
-    #     ports:
-    #       - 6379/tcp

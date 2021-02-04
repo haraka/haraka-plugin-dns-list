@@ -1,12 +1,11 @@
 {
   "name": "haraka-plugin-template",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Haraka plugin that frobnicates email connections",
   "main": "index.js",
   "scripts": {
     "lint": "npx eslint *.js test/*.js",
     "lintfix": "npx eslint --fix *.js test/*.js",
-    "cover": "NODE_ENV=cov npx nyc --reporter=lcovonly npm run test",
     "versions": "npx dependency-version-checker check",
     "test": "npx mocha"
   },
