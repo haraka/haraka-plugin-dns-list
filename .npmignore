@@ -10,3 +10,4 @@ appveyor.yml
 .eslintrc.json
 .nyc_output
 coverage
+.codeclimate.yml
