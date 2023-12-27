@@ -3,15 +3,15 @@
 
 [![NPM][npm-img]][npm-url]
 
-# haraka-plugin-dns-lists
+# haraka-plugin-dns-list
 
 ## dns lists
 
-Looks up the IP address of the remote host in a IP list(s). There are several types of DNS based lists:
+Looks up the IP address of the remote host in DNS lists. There are several types of DNS based lists:
 
 ### block
 
-Block lists (aka: DNSBL) are designed to be used for blocking mail from any host listed in them. Block lists are the most common DNS list type and lists without a type specifier are considered block lists. The default action for block lists is the reject the connection. This can be changed by setting `reject=false` in the zone's settings block.
+Block lists (aka: DNSBL) are designed to be used for blocking mail from any host listed in them. Block lists are the most common DNS list type and lists without a type specified are considered block lists. The default action for block lists is to reject the connection. This can be changed by setting `reject=false` in the zone's settings block.
 
 
 ### allow
@@ -19,6 +19,10 @@ Block lists (aka: DNSBL) are designed to be used for blocking mail from any host
 When the remote IP is found in an allow list, this plugin returns OK for the ehlo, helo, and mail hooks.
 
 IMPORTANT!  The order of plugins in config/plugins is important when this feature is used. It should be listed *before* any plugins that you wish to skip, but after any plugins that accept recipients.
+
+### karma
+
+Karma lists can have different results for IPs beyond a simple block or allow. See [hostkarma.junkemailfilter.com](https://hostkarma.junkemailfilter.com) for details.
 
 
 ## INSTALL
@@ -55,38 +59,41 @@ An array or comma separated list of zones to query.
 
 #### [main] search: (default: all)
 
-- first: consider first DNSBL response conclusive. End processing.
-- all:   process all DNSBL results
+- first: consider first DNS list response conclusive. End processing.
+- all:   process all DNS list results
 
 
 #### [stats] enable=true
 
-    To use this feature you must have installed and configured the 'redis' plugin.
+This feature requires the 'redis' plugin. When enabled, this will record several list statistics to redis:
     
-    When enabled, this will record several list statistics to redis.
-    
-    It will track the total number of queries (TOTAL) and the average response time (AVG\_RT) and the return type (e.g. LISTED or ERROR) to a redis hash where the key is 'dns-list-stat:zone' and the hash field is the response type.
+- the total number of queries (TOTAL)
+- the average response time (AVG\_RT)
+- the return type (e.g. LISTED or ERROR)
 
-    It will also track the positive response overlap between the lists in another redis hash where the key is 'dns-list-overlap:zone' and the hash field is the other list names.
-    
-    Example:
-    <pre><code>redis 127.0.0.1:6379> hgetall dns-list-stat:zen.spamhaus.org
-    1) "TOTAL"
-    2) "23"
-    3) "ENOTFOUND"
-    4) "11"
-    5) "LISTED"
-    6) "12"
-    7) "AVG_RT"
-    8) "45.5"
-    redis 127.0.0.1:6379> hgetall dns-list-overlap:zen.spamhaus.org
-    1) "b.barracudacentral.org"
-    2) "1"
-    3) "bl.spamcop.net"
-    4) "1"
-    5) "TOTAL"
-    6) "1"
-    </code></pre>
+to a redis hash where the key is 'dns-list-stat:zone' and the hash field is the response type.
+
+It will also track the positive response overlap between the lists in another redis hash where the key is 'dns-list-overlap:zone' and the hash field is the other list names. Example:
+
+````
+redis 127.0.0.1:6379> hgetall dns-list-stat:zen.spamhaus.org
+1) "TOTAL"
+2) "23"
+3) "ENOTFOUND"
+4) "11"
+5) "LISTED"
+6) "12"
+7) "AVG_RT"
+8) "45.5"
+
+redis 127.0.0.1:6379> hgetall dns-list-overlap:zen.spamhaus.org
+1) "b.barracudacentral.org"
+2) "1"
+3) "bl.spamcop.net"
+4) "1"
+5) "TOTAL"
+6) "1"
+````
 
 #### [stats] redis\_host
 
@@ -98,16 +105,13 @@ In the form of `host:port` this option allows you to specify a different host on
 The exact name of the DNS zone (as specified above in main.zones) may contain settings about that DNS list. 
 
 * type=[ block, allow, karma ]
-* reject (default: true)
-Reject connections from IPs on block lists. Setting this to false makes dnsbl informational. reject=false is best used in conjunction with plugins like [karma](/manual/plugins/karma.html) that employ a scoring engine to make choices about message delivery.
+* reject=true (default: true) Reject connections from IPs on block lists. Setting this to false makes dnsbl informational. reject=false is best used in conjunction with plugins like [karma](/manual/plugins/karma.html) that employ a scoring engine to make choices about message delivery.
 * ipv6=true | false
 
 
-<!-- leave these buried at the bottom of the document -->
 [ci-img]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml/badge.svg
 [ci-url]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml
 [clim-img]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list/badges/gpa.svg
 [clim-url]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list
 [npm-img]: https://nodei.co/npm/haraka-plugin-dns-list.png
 [npm-url]: https://www.npmjs.com/package/haraka-plugin-dns-list
-

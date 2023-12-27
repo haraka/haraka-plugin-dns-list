@@ -1,6 +1,6 @@
 {
   "name": "haraka-plugin-dns-list",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Haraka plugin for DNS lists (DNSBL, DNSWL)",
   "main": "index.js",
   "scripts": {
