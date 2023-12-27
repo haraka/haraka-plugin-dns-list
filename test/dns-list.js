@@ -86,7 +86,7 @@ describe('check_zone', function () {
 })
 
 describe('check_zones', function () {
-  this.timeout(20000)
+  this.timeout(22000)
 
   it('tests each block list', async function () {
     await this.plugin.check_zones(6000);

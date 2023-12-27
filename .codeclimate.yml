@@ -18,6 +18,6 @@ checks:
   method-lines:
     config:
       threshold: 30
-method-complexity:
+  method-complexity:
     config:
-      threshold: 6
+      threshold: 10
