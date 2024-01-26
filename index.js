@@ -7,6 +7,8 @@ const net_utils   = require('haraka-net-utils');
 exports.disable_allowed = false;
 let redis_client;
 
+const resolver = new dns.Resolver({timeout: 25000, tries: 1});
+
 exports.register = function () {
 
   this.load_config();
@@ -172,7 +174,7 @@ exports.lookup = async function (ip, zone) {
 
   try {
     const query = ipQuery(ip, zone)
-    const a = await dns.resolve4(query, 'A')
+    const a = await resolver.resolve4(query, 'A')
     // console.log(`lookup ${query} -> a: ${a}`)
 
     this.stats_incr_zone(null, zone, start);  // Statistics
@@ -271,9 +273,9 @@ exports.checkZonePositive = async function (zone, ip) {
 
   const query = ipQuery(ip, zone)
   try {
-    const a = await dns.resolve4(query, 'A')
+    const a = await resolver.resolve4(query, 'A')
     if (a) {
-      // const txt = await dns.resolve4(query, 'TXT')
+      // const txt = await resolver.resolve4(query, 'TXT')
       // console.log(`${query} -> ${a}\t${txt}`)
       for (const e of a) {
         if (this.cfg[zone] && this.cfg[zone][e]) {
@@ -303,10 +305,10 @@ exports.checkZoneNegative = async function (zone, ip) {
 
   const query = ipQuery(ip, zone)
   try {
-    const a = await dns.resolve4(query, 'A')
+    const a = await resolver.resolve4(query, 'A')
     if (a) {
       // results here are invalid
-      // const txt = await dns.resolve4(query, 'TXT')
+      // const txt = await resolver.resolve4(query, 'TXT')
       // if (txt && txt !== a) console.warn(`${query} -> ${a}\t${txt}`)
       this.disable_zone(zone, a);
     }
