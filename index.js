@@ -1,8 +1,9 @@
 // dns-lists plugin
 
-const dns         = require('dns').promises;
 const net         = require('net');
 const net_utils   = require('haraka-net-utils');
+const dnsPromises = require('dns').promises;
+const dns         = new dnsPromises.Resolver({timeout: 25000, tries: 1});
 
 exports.disable_allowed = false;
 let redis_client;
@@ -184,9 +185,9 @@ exports.lookup = async function (ip, zone) {
   catch (err) {
     this.stats_incr_zone(err, zone, start);  // Statistics
 
-    if (err.code === dns.NOTFOUND) return;  // unlisted, not an error
+    if (err.code === dnsPromises.NOTFOUND) return;  // unlisted, not an error
 
-    if (err.code === dns.TIMEOUT) {         // list timed out
+    if (err.code === dnsPromises.TIMEOUT) {         // list timed out
       this.disable_zone(zone, err.code);    // disable it
       return
     }
@@ -313,9 +314,9 @@ exports.checkZoneNegative = async function (zone, ip) {
   }
   catch (err) {
     switch (err.code) {
-      case dns.NOTFOUND:        // IP not listed
+      case dnsPromises.NOTFOUND:        // IP not listed
         return true
-      case dns.TIMEOUT:         // list timed out
+      case dnsPromises.TIMEOUT:         // list timed out
         this.disable_zone(zone, err.code)
     }
     console.error(`${query} -> got err ${err}`)
