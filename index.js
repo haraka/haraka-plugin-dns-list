@@ -5,7 +5,6 @@ const net_utils   = require('haraka-net-utils');
 const dnsPromises = require('dns').promises;
 const dns         = new dnsPromises.Resolver({timeout: 25000, tries: 1});
 
-exports.disable_allowed = false;
 let redis_client;
 
 exports.register = function () {
@@ -55,7 +54,13 @@ exports.load_config = function () {
   }
 
   // active zones
-  this.zones = new Set()
+  if (this.cfg.main.periodic_checks < 5) {
+    // all configured are enabled
+    this.zones = new Set(...this.cfg.main.zones)
+  }
+  else {
+    this.zones = new Set() // populated by check_zones()
+  }
 }
 
 exports.should_skip = function (connection) {
@@ -141,7 +146,7 @@ exports.onConnect = function (next, connection) {
 
   Promise.all(promises).then(() => {
     // console.log(`Promise.all`)
-    if (connection.results.get(this).fail?.length) {
+    if (connection.results.get(this)?.fail?.length) {
       nextOnce(DENY, connection.results.get(this).fail)
       return
     }
@@ -354,7 +359,7 @@ exports.check_zones = async function (interval, done) {
 
   // Set a timer to re-test
   if (interval && interval >= 5 && !this._interval) {
-    this.logdebug(`will re-test list zones every ${interval} minutes`);
+    this.loginfo(`will re-test list zones every ${interval} minutes`);
     this._interval = setInterval(() => {
       this.check_zones();
     }, (interval * 60) * 1000);

@@ -34,7 +34,7 @@ echo "dns-list" >> config/plugins
 service haraka restart
 ```
 
-### Configuration
+## Configure
 
 If the default configuration is insufficient, copy the config file from the distribution into your haraka config dir and modify it:
 
@@ -65,15 +65,15 @@ An array or comma separated list of zones to query.
 
 #### [stats] enable=true
 
-This feature requires the 'redis' plugin. When enabled, this will record several list statistics to redis:
-    
+This feature requires the [redis](https://github.com/haraka/haraka-plugin-redis) plugin. When enabled, this will record several list statistics to redis:
+
 - the total number of queries (TOTAL)
 - the average response time (AVG\_RT)
 - the return type (e.g. LISTED or ERROR)
 
-to a redis hash where the key is 'dns-list-stat:zone' and the hash field is the response type.
+to a redis hash where the key is `dns-list-stat:zone` and the hash field is the response type.
 
-It will also track the positive response overlap between the lists in another redis hash where the key is 'dns-list-overlap:zone' and the hash field is the other list names. Example:
+It will also track the positive response overlap between the lists in another redis hash where the key is `dns-list-overlap:zone` and the hash field is the other list names. Example:
 
 ````
 redis 127.0.0.1:6379> hgetall dns-list-stat:zen.spamhaus.org
@@ -102,10 +102,10 @@ In the form of `host:port` this option allows you to specify a different host on
 
 ### Per-Zone DNS list settings
 
-The exact name of the DNS zone (as specified above in main.zones) may contain settings about that DNS list. 
+The exact name of the DNS zone (as specified above in main.zones) may contain settings about that DNS list.
 
 * type=[ block, allow, karma ]
-* reject=true (default: true) Reject connections from IPs on block lists. Setting this to false makes dnsbl informational. reject=false is best used in conjunction with plugins like [karma](/manual/plugins/karma.html) that employ a scoring engine to make choices about message delivery.
+* reject=true (default: true) Reject connections from IPs on block lists. Setting this to false makes dnsbl informational. reject=false is best used in conjunction with plugins like [karma](https://github.com/haraka/haraka-plugin-karma) that employ a scoring engine to make choices about message delivery.
 * ipv6=true | false
 
 
