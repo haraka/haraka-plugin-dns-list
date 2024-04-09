@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### [1.0.2] - 2024-04-09
 
-- 
+- populate [files] in package.json. Delete .npmignore.
 - doc(CONTRIBUTORS): added
 
 ## 1.0.0 - 2023-12-15

@@ -3,6 +3,7 @@
   "version": "1.0.2",
   "description": "Haraka plugin for DNS lists (DNSBL, DNSWL)",
   "main": "index.js",
+  "files": ["config","CHANGELOG.md"],
   "scripts": {
     "lint": "npx eslint *.js test",
     "lintfix": "npx eslint --fix *.js test",
