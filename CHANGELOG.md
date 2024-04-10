@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - doc(CHANGE): renamed Changes.md -> CHANGELOG.md
 - doc(CONTRIBUTORS): added
 - prettier
+- feat: add timeout to DNS Resolver #2
 
 ## 1.0.0 - 2023-12-15
 
