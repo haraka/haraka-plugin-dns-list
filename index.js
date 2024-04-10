@@ -1,7 +1,7 @@
 // dns-lists plugin
 
-const dnsPromises = require('dns').promises;
-const dns = new dnsPromises.Resolver({timeout: 25000, tries: 1});
+const dnsPromises = require('dns').promises
+const dns = new dnsPromises.Resolver({ timeout: 25000, tries: 1 })
 const net = require('net')
 const net_utils = require('haraka-net-utils')
 
@@ -17,7 +17,7 @@ exports.register = function () {
   this.register_hook('connect', 'onConnect')
 
   // IMPORTANT: don't run this on hook_rcpt otherwise we're an open relay...
-  for (const hook of [ 'ehlo', 'helo', 'mail' ]) {
+  for (const hook of ['ehlo', 'helo', 'mail']) {
     this.register_hook(hook, 'check_dnswl')
   }
 }
@@ -67,12 +67,15 @@ exports.should_skip = function (connection) {
   if (!connection) return true
 
   if (connection.remote.is_private) {
-    connection.results.add(this, { skip: `private: ${connection.remote.ip}`, emit: true})
+    connection.results.add(this, {
+      skip: `private: ${connection.remote.ip}`,
+      emit: true,
+    })
     return true
   }
 
   if (this.zones.length === 0) {
-    connection.results.add(this, { err: `no zones`})
+    connection.results.add(this, { err: `no zones` })
     return true
   }
 
