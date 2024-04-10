@@ -1,7 +1,7 @@
 // dns-lists plugin
 
-const dnsPromises = require('dns').promises;
-const dns = new dnsPromises.Resolver({timeout: 25000, tries: 1});
+const dnsPromises = require('dns').promises
+const dns = new dnsPromises.Resolver({ timeout: 25000, tries: 1 })
 const net = require('net')
 const net_utils = require('haraka-net-utils')
 
@@ -17,9 +17,9 @@ exports.register = function () {
   this.register_hook('connect', 'onConnect')
 
   // IMPORTANT: don't run this on hook_rcpt otherwise we're an open relay...
-  ;['ehlo', 'helo', 'mail'].forEach((hook) => {
+  for (const hook of ['ehlo', 'helo', 'mail']) {
     this.register_hook(hook, 'check_dnswl')
-  })
+  }
 }
 
 exports.load_config = function () {
@@ -67,12 +67,15 @@ exports.should_skip = function (connection) {
   if (!connection) return true
 
   if (connection.remote.is_private) {
-    connection.logdebug(this, `skip private: ${connection.remote.ip}`)
+    connection.results.add(this, {
+      skip: `private: ${connection.remote.ip}`,
+      emit: true,
+    })
     return true
   }
 
   if (this.zones.length === 0) {
-    connection.logerror(this, 'no zones')
+    connection.results.add(this, { err: `no zones` })
     return true
   }
 
@@ -92,7 +95,6 @@ exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
 
   for (const i of ips) {
     if (this.cfg[zone] && this.cfg[zone][i]) {
-      // console.log(`zone: ${zone} i: ${this.cfg[zone][i]}`)
       connection.results.add(this, { msg: this.cfg[zone][i] })
     }
   }
@@ -122,8 +124,7 @@ exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
 }
 
 exports.onConnect = function (next, connection) {
-  // console.log(`onConnect`)
-
+  const plugin = this
   if (this.should_skip(connection)) return next()
 
   let calledNext = false
@@ -131,6 +132,7 @@ exports.onConnect = function (next, connection) {
     // console.log(`nextOnce: ${code} : ${zones}`)
     if (calledNext) return
     calledNext = true
+    connection.results.add(plugin, { emit: true })
     if (code === undefined || zones === undefined) return next()
     next(
       code,
@@ -140,7 +142,6 @@ exports.onConnect = function (next, connection) {
 
   const promises = []
   for (const zone of this.zones) {
-    // console.log(`promise zone: ${zone}`)
     promises.push(this.eachActiveDnsList(connection, zone, nextOnce))
   }
 

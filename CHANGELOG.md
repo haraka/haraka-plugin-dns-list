@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
+### [1.0.3] - 2024-04-10
+
+- emit a log entry when all DNS lists pass (to show its working)
+
 ### [1.0.2] - 2024-04-09
 
 - dep: eslint-plugin-haraka -> @haraka/eslint-config
@@ -18,4 +22,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Initial release
 
 [1.0.1]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/1.0.1
-[1.0.2]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/1.0.2
+[1.0.2]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.0.2
+[1.0.3]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.0.3
