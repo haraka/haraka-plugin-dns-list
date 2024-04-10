@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - dep: eslint-plugin-haraka -> @haraka/eslint-config
 - populate [files] in package.json. Delete .npmignore.
+- doc(CHANGE): renamed Changes.md -> CHANGELOG.md
 - doc(CONTRIBUTORS): added
+- prettier
 
 ## 1.0.0 - 2023-12-15
 
