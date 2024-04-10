@@ -1,13 +1,21 @@
 {
   "name": "haraka-plugin-dns-list",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Haraka plugin for DNS lists (DNSBL, DNSWL)",
   "main": "index.js",
+  "files": [
+    "config",
+    "CHANGELOG.md"
+  ],
   "scripts": {
-    "lint": "npx eslint *.js test",
-    "lintfix": "npx eslint --fix *.js test",
-    "versions": "npx dependency-version-checker check",
-    "test": "npx mocha"
+    "format": "npm run prettier:fix && npm run lint:fix",
+    "lint": "npx eslint@^8 *.js test",
+    "lint:fix": "npx eslint@^8 *.js test --fix",
+    "prettier": "npx prettier . --check",
+    "prettier:fix": "npx prettier . --write --log-level=warn",
+    "test": "npx mocha@^10",
+    "versions": "npx @msimerson/dependency-version-checker check",
+    "versions:fix": "npx @msimerson/dependency-version-checker update && npx prettier package.json --write --log-level=warn"
   },
   "repository": {
     "type": "git",
@@ -27,12 +35,10 @@
   },
   "homepage": "https://github.com/haraka/haraka-plugin-dns-list#readme",
   "devDependencies": {
-    "eslint": "^8.55.0",
-    "eslint-plugin-haraka": "*",
-    "haraka-test-fixtures": "*",
-    "mocha": "^10.2.0"
+    "@haraka/eslint-config": "^1.1.3",
+    "haraka-test-fixtures": "^1.3.6"
   },
   "dependencies": {
-    "haraka-net-utils": "^1.5.3"
+    "haraka-net-utils": "^1.5.4"
   }
 }
