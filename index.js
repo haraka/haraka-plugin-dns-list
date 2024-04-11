@@ -20,6 +20,7 @@ exports.register = function () {
   for (const hook of ['ehlo', 'helo', 'mail']) {
     this.register_hook(hook, 'check_dnswl')
   }
+  this.register_hook('mail', 'check_backscatterer')
 }
 
 exports.load_config = function () {
@@ -31,6 +32,7 @@ exports.load_config = function () {
         '*.reject',
         '*.ipv6',
         '*.loopback_is_rejected',
+        '-ips.backscatterer.org.enable'
       ],
     },
     () => {
@@ -157,6 +159,25 @@ exports.onConnect = function (next, connection) {
 
 exports.check_dnswl = (next, connection) =>
   connection.notes.dnswl ? next(OK) : next()
+
+exports.check_backscatterer = async function (next, connection, params) {
+  if (!this.cfg['ips.backscatterer.org'].enable) return next()
+
+  const user = ((params[0]?.user) ? params[0].user.toLowerCase() : null);
+  if (!(!user || user === 'postmaster')) return next();
+
+  try {
+    const a = await this.lookup(connection.remote.ip, 'ips.backscatterer.org')
+    if (a) return next(
+      DENY,
+      `Host ${connection.remote.host} [${connection.remote.ip}] is listed by ips.backscatterer.org`
+    );
+  }
+  catch (err) {
+    connection.logerror(this, err)
+  }
+  next()
+}
 
 function ipQuery(ip, zone) {
   // 1.2.3.4 -> 4.3.2.1.$zone.
