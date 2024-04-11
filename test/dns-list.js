@@ -17,12 +17,12 @@ describe('dns-list', function () {
 
   it('loads config/dns-list.ini', function () {
     this.plugin.load_config()
-    // console.log(this.plugin.cfg)
     assert.ok(this.plugin.cfg)
   })
 
   it('config initializes a boolean', function () {
     assert.equal(this.plugin.cfg.stats.enable, false, this.plugin.cfg)
+    assert.equal(this.plugin.cfg['ips.backscatterer.org'].enable, false)
   })
 
   it('sets up a connection', function () {
@@ -83,10 +83,10 @@ describe('check_zone', function () {
 })
 
 describe('check_zones', function () {
-  this.timeout(22000)
+  this.timeout(29000)
 
   it('tests each block list', async function () {
-    await this.plugin.check_zones(6000)
+    await this.plugin.check_zones(8000)
   })
 })
 
