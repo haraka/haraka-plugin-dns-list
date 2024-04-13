@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
+### [1.2.0] - 2024-04-13
+
+- dnswl: sending OK on helo & mail hooks disabled by default
+- check_zones: check all zones concurrently (test speedup)
+
 ### [1.1.0] - 2024-04-10
 
 - feat: imported backscatterer from haraka/Haraka
@@ -29,3 +34,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 [1.0.2]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.0.2
 [1.0.3]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.0.3
 [1.1.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.1.0
+[1.2.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.0
