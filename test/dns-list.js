@@ -40,26 +40,31 @@ describe('dns-list', function () {
 
 describe('lookup', function () {
   it('Spamcop, test IPv4', async function () {
+    this.timeout=4000
     const a = await this.plugin.lookup('127.0.0.2', 'bl.spamcop.net')
     assert.deepStrictEqual(['127.0.0.2'], a)
   })
 
   it('Spamcop, unlisted IPv6', async function () {
+    this.timeout=4000
     const r = await this.plugin.lookup('::1', 'bl.spamcop.net')
     assert.deepStrictEqual(undefined, r)
   })
 
   it('b.barracudacentral.org, unlisted IPv6', async function () {
+    this.timeout=4000
     const r = await this.plugin.lookup('::1', 'b.barracudacentral.org')
     assert.deepStrictEqual(undefined, r)
   })
 
   it('Spamcop, unlisted IPv4', async function () {
+    this.timeout=4000
     const a = await this.plugin.lookup('127.0.0.1', 'bl.spamcop.net')
     assert.deepStrictEqual(undefined, a)
   })
 
   it('CBL', async function () {
+    this.timeout=4000
     const a = await this.plugin.lookup('127.0.0.2', 'xbl.spamhaus.org')
     assert.deepStrictEqual(a, ['127.0.0.4'])
   })

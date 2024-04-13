@@ -16,11 +16,18 @@ exports.register = function () {
 
   this.register_hook('connect', 'onConnect')
 
-  // IMPORTANT: don't run this on hook_rcpt otherwise we're an open relay...
-  for (const hook of ['ehlo', 'helo', 'mail']) {
-    this.register_hook(hook, 'check_dnswl')
+  if (this.cfg['ips.backscatterer.org'].enable) {
+    this.register_hook('mail', 'check_backscatterer')
   }
-  this.register_hook('mail', 'check_backscatterer')
+
+  // IMPORTANT: don't run this on hook_rcpt else we're an open relay...
+  if (this.cfg['list.dnswl.org'].ok_helo) {
+    this.register_hook('helo', 'check_dnswl')
+    this.register_hook('ehlo', 'check_dnswl')
+  }
+  if (this.cfg['list.dnswl.org'].ok_mail) {
+    this.register_hook('mail', 'check_dnswl')
+  }
 }
 
 exports.load_config = function () {
@@ -33,6 +40,8 @@ exports.load_config = function () {
         '*.ipv6',
         '*.loopback_is_rejected',
         '-ips.backscatterer.org.enable',
+        '-list.dnswl.org.ok_helo',
+        '-list.dnswl.org.ok_mail',
       ],
     },
     () => {
@@ -375,12 +384,15 @@ exports.check_zone = async function (zone) {
 exports.check_zones = async function (interval) {
   if (interval) interval = parseInt(interval)
 
+  const promises = []
   for (const zone of this.cfg.main.zones) {
-    try {
-      await this.check_zone(zone)
-    } catch (err) {
-      console.error(`zone ${zone} err: ${err}`)
-    }
+    promises.push(this.check_zone(zone))
+  }
+
+  try {
+    await Promise.all(promises)
+  } catch (err) {
+    console.error(err)
   }
 
   // Set a timer to re-test
