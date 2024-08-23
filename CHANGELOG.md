@@ -6,18 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### [1.2.1] - 2024-08-22
 
-#### Added
-
-- 
-
-#### Fixed
-
-- 
-
-#### Changed
-
-- 
-
+- fix: don't make a set from a set (happened when periodic_checks < 5), #9
+- chore: bump dep versions
 
 ### [1.2.0] - 2024-04-13
 

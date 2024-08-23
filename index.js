@@ -68,8 +68,6 @@ exports.load_config = function () {
   // active zones
   if (this.cfg.main.periodic_checks < 5) {
     // all configured are enabled
-    // The original code is making a Set from the already existing Set created above. It leads to gibberish
-    //this.zones = new Set(...this.cfg.main.zones)
     this.zones = this.cfg.main.zones
   } else {
     this.zones = new Set() // populated by check_zones()
