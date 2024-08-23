@@ -32,8 +32,7 @@ describe('dns-list', function () {
 
   it('sets up a transaction', function () {
     this.connection = fixtures.connection.createConnection({})
-    this.connection.transaction = fixtures.transaction.createTransaction({})
-    // console.log(this.connection.transaction)
+    this.connection.init_transaction()
     assert.ok(this.connection.transaction.header)
   })
 })
