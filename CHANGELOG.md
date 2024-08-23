@@ -4,6 +4,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
+### [1.2.1] - 2024-08-22
+
+#### Added
+
+- 
+
+#### Fixed
+
+- 
+
+#### Changed
+
+- 
+
+
 ### [1.2.0] - 2024-04-13
 
 - dnswl: sending OK on helo & mail hooks disabled by default
@@ -35,3 +50,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 [1.0.3]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.0.3
 [1.1.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.1.0
 [1.2.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.0
+[1.2.1]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.1
