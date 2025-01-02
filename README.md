@@ -1,8 +1,6 @@
 [![CI Test Status][ci-img]][ci-url]
 [![Code Climate][clim-img]][clim-url]
 
-[![NPM][npm-img]][npm-url]
-
 # haraka-plugin-dns-list
 
 ## dns lists
@@ -115,5 +113,3 @@ if DNSBL returns OK on the mail hook, it prevents any subsequent mail hooks in o
 [ci-url]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml
 [clim-img]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list/badges/gpa.svg
 [clim-url]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list
-[npm-img]: https://nodei.co/npm/haraka-plugin-dns-list.png
-[npm-url]: https://www.npmjs.com/package/haraka-plugin-dns-list

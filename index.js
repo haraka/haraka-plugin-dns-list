@@ -189,10 +189,10 @@ exports.check_backscatterer = async function (next, connection, params) {
 }
 
 function ipQuery(ip, zone) {
-  // 1.2.3.4 -> 4.3.2.1.$zone.
+  // ::FFFF:7F00:2 -> 2.0.0.0.0.0.f.7.f.f.f.f.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.$zone.
   if (net.isIPv6(ip)) return [net_utils.ipv6_reverse(ip), zone, ''].join('.')
 
-  // ::FFFF:7F00:2 -> 2.0.0.0.0.0.f.7.f.f.f.f.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.$zone.
+  // 1.2.3.4 -> 4.3.2.1.$zone.
   if (net.isIPv4(ip))
     return [ip.split('.').reverse().join('.'), zone, ''].join('.')
 
