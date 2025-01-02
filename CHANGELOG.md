@@ -4,7 +4,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
-- fix: don't crash when zone settings is missing
+### [1.2.2] - 2025-01-02
+
+- fix: zone specific settings are optional, so check if it exists before accessing properties inside it, #11
 
 ### [1.2.1] - 2024-08-22
 
@@ -43,3 +45,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 [1.1.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.1.0
 [1.2.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.0
 [1.2.1]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.1
+[1.2.2]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.2
