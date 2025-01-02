@@ -344,7 +344,7 @@ exports.checkZoneNegative = async function (zone, ip) {
   // IPv4-based DNSxLs MUST NOT contain an entry for 127.0.0.1.
 
   // skip this test for DNS lists that don't follow the RFC
-  if (this.cfg[zone].loopback_is_rejected) return true
+  if (this.cfg[zone]?.loopback_is_rejected) return true
 
   const query = ipQuery(ip, zone)
   try {
@@ -373,7 +373,7 @@ exports.check_zone = async function (zone) {
 
   this.enable_zone(zone) // both tests passed
 
-  if (this.cfg[zone].ipv6 === true) {
+  if (this.cfg[zone]?.ipv6 === true) {
     await this.checkZonePositive(zone, '::FFFF:7F00:2')
     await this.checkZoneNegative(zone, '::FFFF:7F00:1')
   }

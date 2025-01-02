@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
+- fix: don't crash when zone settings is missing
+
 ### [1.2.1] - 2024-08-22
 
 - fix: don't make a set from a set (happened when periodic_checks < 5), #9
