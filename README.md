@@ -19,7 +19,7 @@ IMPORTANT! The order of plugins in config/plugins is important when this feature
 
 ### karma
 
-Karma lists can have different results for IPs beyond a simple block or allow. See [hostkarma.junkemailfilter.com](https://hostkarma.junkemailfilter.com) for details.
+Karma lists can have different results for IPs beyond a simple block or allow. See [hostkarma.junkemailfilter.com][2] for details.
 
 ## INSTALL
 
@@ -58,7 +58,7 @@ An array or comma separated list of zones to query.
 
 #### [stats] enable=true
 
-This feature requires the [redis](https://github.com/haraka/haraka-plugin-redis) plugin. When enabled, this will record several list statistics to redis:
+This feature requires the [redis][1] plugin. When enabled, this will record several list statistics to redis:
 
 - the total number of queries (TOTAL)
 - the average response time (AVG_RT)
@@ -97,7 +97,7 @@ In the form of `host:port` this option allows you to specify a different host on
 The exact name of the DNS zone (as specified above in main.zones) may contain settings about that DNS list.
 
 - type=[ block, allow, karma ]
-- reject=true (default: true) Reject connections from IPs on block lists. Setting this to false makes dnsbl informational. reject=false is best used in conjunction with plugins like [karma](https://github.com/haraka/haraka-plugin-karma) that employ a scoring engine to make choices about message delivery.
+- reject=true (default: true) Reject connections from IPs on block lists. Setting this to false makes dnsbl informational. reject=false is best used in conjunction with plugins like [karma][3] that employ a scoring engine to make choices about message delivery.
 - ipv6=true | false
 
 #### dnswl
@@ -107,7 +107,13 @@ ok_helo=false
 ok_mail=false
 ```
 
-if DNSBL returns OK on the mail hook, it prevents any subsequent mail hooks in other plugins from running. This might include [SPF](haraka-plugin-spf), [known senders](https://github.com/haraka/haraka-plugin-known-senders), [karma](https://github.com/haraka/haraka-plugin-karma), recipient plugins, and any other plugins that want to do transaction initialization on `hook_mail`. It can be dangerous.
+if DNSBL returns OK on the mail hook, it prevents any subsequent mail hooks in other plugins from running. This might include [SPF][5], [known senders][4], [karma][3], recipient plugins, and any other plugins that want to do transaction initialization on `hook_mail`. It can be dangerous.
+
+[1]: https://github.com/haraka/haraka-plugin-redis
+[2]: https://hostkarma.junkemailfilter.com
+[3]: https://github.com/haraka/haraka-plugin-karma
+[4]: https://github.com/haraka/haraka-plugin-known-senders
+[5]: https://github.com/haraka/haraka-plugin-spf
 
 [ci-img]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml/badge.svg
 [ci-url]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml
