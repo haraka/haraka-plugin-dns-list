@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### [1.2.3] - 2025-01-26
 
-- prettier: move config into package.json
+- doc(README): use URL refs
+- style(prettier): move config into package.json
+- dep(all): bump versions to latest
 - dep(eslint): upgrade to v9
 
 ### [1.2.2] - 2025-01-02
