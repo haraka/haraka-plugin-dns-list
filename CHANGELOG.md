@@ -3,6 +3,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
+- removed SORBS.net
 
 ### [1.2.3] - 2025-01-26
 
