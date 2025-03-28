@@ -3,7 +3,10 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
-- removed SORBS.net
+
+### [1.2.4] - 2025-03-28
+
+- remove SORBS.net (#14)
 
 ### [1.2.3] - 2025-01-26
 
@@ -55,3 +58,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 [1.2.1]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.1
 [1.2.2]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.2
 [1.2.3]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.3
+[1.2.4]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.4
