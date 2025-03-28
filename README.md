@@ -114,7 +114,6 @@ if DNSBL returns OK on the mail hook, it prevents any subsequent mail hooks in o
 [3]: https://github.com/haraka/haraka-plugin-karma
 [4]: https://github.com/haraka/haraka-plugin-known-senders
 [5]: https://github.com/haraka/haraka-plugin-spf
-
 [ci-img]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml/badge.svg
 [ci-url]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml
 [clim-img]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list/badges/gpa.svg
