@@ -1,5 +1,5 @@
 // node.js built-in modules
-const assert = require('assert')
+const assert = require('node:assert')
 
 // npm modules
 const fixtures = require('haraka-test-fixtures')
@@ -99,62 +99,72 @@ describe('onConnect', function () {
     this.connection = fixtures.connection.createConnection()
   })
 
-  it('onConnect 127.0.0.1', function (done) {
+  it('onConnect 127.0.0.1', async function () {
     this.connection.set('remote.ip', '127.0.0.1')
     this.plugin.zones = new Set(['bl.spamcop.net', 'list.dnswl.org'])
-    this.plugin.onConnect((code, msg) => {
-      assert.strictEqual(code, undefined)
-      assert.strictEqual(msg, undefined)
-      done()
-    }, this.connection)
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        assert.strictEqual(code, undefined)
+        assert.strictEqual(msg, undefined)
+        resolve()
+      }, this.connection)
+    })
   })
 
-  it('onConnect 127.0.0.2', function (done) {
+  it('onConnect 127.0.0.2', async function () {
     this.connection.set('remote.ip', '127.0.0.2')
     this.plugin.zones = new Set(['bl.spamcop.net', 'list.dnswl.org'])
-    this.plugin.onConnect((code, msg) => {
-      // console.log(`code: ${code}, ${msg}`)
-      if (code === OK) {
-        assert.strictEqual(code, OK)
-        assert.strictEqual(msg, 'host [127.0.0.2] is listed on list.dnswl.org')
-      } else {
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        // console.log(`code: ${code}, ${msg}`)
+        if (code === OK) {
+          assert.strictEqual(code, OK)
+          assert.strictEqual(msg, 'host [127.0.0.2] is listed on list.dnswl.org')
+        } else {
+          assert.strictEqual(code, DENY)
+          assert.strictEqual(msg, 'host [127.0.0.2] is listed on bl.spamcop.net')
+        }
+        resolve()
+      }, this.connection)
+    })
+  })
+
+  it('Spamcop + CBL', async function () {
+    this.connection.set('remote.ip', '127.0.0.2')
+    this.plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        // console.log(`code: ${code}, ${msg}`)
         assert.strictEqual(code, DENY)
-        assert.strictEqual(msg, 'host [127.0.0.2] is listed on bl.spamcop.net')
-      }
-      done()
-    }, this.connection)
+        assert.ok(/is listed on/.test(msg))
+        resolve()
+      }, this.connection)
+    })
   })
 
-  it('Spamcop + CBL', function (done) {
-    this.connection.set('remote.ip', '127.0.0.2')
-    this.plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
-    this.plugin.onConnect((code, msg) => {
-      // console.log(`code: ${code}, ${msg}`)
-      assert.strictEqual(code, DENY)
-      assert.ok(/is listed on/.test(msg))
-      done()
-    }, this.connection)
-  })
-
-  it('Spamcop + CBL + negative result', function (done) {
+  it('Spamcop + CBL + negative result', async function () {
     this.connection.set('remote.ip', '127.0.0.1')
     this.plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
-    this.plugin.onConnect((code, msg) => {
-      // console.log(`test return ${code} ${msg}`)
-      assert.strictEqual(code, undefined)
-      assert.strictEqual(msg, undefined)
-      done()
-    }, this.connection)
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        // console.log(`test return ${code} ${msg}`)
+        assert.strictEqual(code, undefined)
+        assert.strictEqual(msg, undefined)
+        resolve()
+      }, this.connection)
+    })
   })
 
-  it('IPv6 addresses supported', function (done) {
+  it('IPv6 addresses supported', async function () {
     this.connection.set('remote.ip', '::1')
     this.plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
-    this.plugin.onConnect((code, msg) => {
-      assert.strictEqual(code, undefined)
-      assert.strictEqual(msg, undefined)
-      done()
-    }, this.connection)
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        assert.strictEqual(code, undefined)
+        assert.strictEqual(msg, undefined)
+        resolve()
+      }, this.connection)
+    })
   })
 })
 
@@ -165,24 +175,28 @@ describe('first', function () {
     this.connection = fixtures.connection.createConnection()
   })
 
-  it('positive result', function (done) {
+  it('positive result', async function () {
     this.connection.set('remote.ip', '127.0.0.2')
-    this.plugin.onConnect((code, msg) => {
-      // console.log(`onConnect return ${code} ${msg}`)
-      assert.strictEqual(code, DENY)
-      assert.ok(/is listed on/.test(msg))
-      done()
-    }, this.connection)
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        // console.log(`onConnect return ${code} ${msg}`)
+        assert.strictEqual(code, DENY)
+        assert.ok(/is listed on/.test(msg))
+        resolve()
+      }, this.connection)
+    })
   })
 
-  it('negative result', function (done) {
+  it('negative result', async function () {
     this.connection.set('remote.ip', '127.0.0.1')
-    this.plugin.onConnect((code, msg) => {
-      // console.log(`test return ${code} ${msg}`)
-      assert.strictEqual(code, undefined)
-      assert.strictEqual(msg, undefined)
-      done()
-    }, this.connection)
+    await new Promise((resolve) => {
+      this.plugin.onConnect((code, msg) => {
+        // console.log(`test return ${code} ${msg}`)
+        assert.strictEqual(code, undefined)
+        assert.strictEqual(msg, undefined)
+        resolve()
+      }, this.connection)
+    })
   })
 })
 
