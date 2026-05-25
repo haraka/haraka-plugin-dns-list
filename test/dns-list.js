@@ -116,10 +116,16 @@ describe('onConnect', () => {
         // console.log(`code: ${code}, ${msg}`)
         if (code === OK) {
           assert.strictEqual(code, OK)
-          assert.strictEqual(msg, 'host [127.0.0.2] is listed on list.dnswl.org')
+          assert.strictEqual(
+            msg,
+            'host [127.0.0.2] is listed on list.dnswl.org',
+          )
         } else {
           assert.strictEqual(code, DENY)
-          assert.strictEqual(msg, 'host [127.0.0.2] is listed on bl.spamcop.net')
+          assert.strictEqual(
+            msg,
+            'host [127.0.0.2] is listed on bl.spamcop.net',
+          )
         }
         resolve()
       }, connection)
@@ -204,18 +210,12 @@ describe('disable_zone', () => {
 
   it('testbl1, no zones', () => {
     plugin.zones = new Set()
-    assert.strictEqual(
-      plugin.disable_zone('testbl1', 'test result'),
-      false,
-    )
+    assert.strictEqual(plugin.disable_zone('testbl1', 'test result'), false)
   })
 
   it('testbl1, zones miss', () => {
     plugin.zones = new Set(['testbl2'])
-    assert.strictEqual(
-      plugin.disable_zone('testbl1', 'test result'),
-      false,
-    )
+    assert.strictEqual(plugin.disable_zone('testbl1', 'test result'), false)
     assert.strictEqual(plugin.zones.size, 1)
   })
 
@@ -223,5 +223,88 @@ describe('disable_zone', () => {
     plugin.zones = new Set(['testbl1'])
     assert.strictEqual(plugin.disable_zone('testbl1', 'test result'), true)
     assert.strictEqual(plugin.zones.size, 0)
+  })
+})
+
+describe('ipQuery', () => {
+  it('reverses IPv4 octets', () => {
+    assert.strictEqual(
+      plugin.ipQuery('1.2.3.4', 'zen.spamhaus.org'),
+      '4.3.2.1.zen.spamhaus.org.',
+    )
+  })
+
+  it('normalizes IPv4-mapped IPv6 before reversing', () => {
+    assert.strictEqual(
+      plugin.ipQuery('::ffff:1.2.3.4', 'zen.spamhaus.org'),
+      '4.3.2.1.zen.spamhaus.org.',
+    )
+  })
+
+  it('throws on invalid IP, message includes the IP', () => {
+    assert.throws(
+      () => plugin.ipQuery('not-an-ip', 'z'),
+      /invalid IP: not-an-ip/,
+    )
+  })
+})
+
+describe('should_skip', () => {
+  it('records err when zones set is empty', () => {
+    connection = fixtures.connection.createConnection()
+    plugin.zones = new Set()
+    assert.strictEqual(plugin.should_skip(connection), true)
+    assert.ok(
+      connection.results.get(plugin).err.some((e) => /no zones/.test(e)),
+    )
+  })
+})
+
+describe('eachActiveDnsList ipv6 policy', () => {
+  it('skips IPv6 client on a zone with ipv6=false', async () => {
+    connection = fixtures.connection.createConnection()
+    connection.set('remote.ip', '2001:db8::1')
+    plugin.cfg['fake.zone'] = { ipv6: false }
+    let dnsCalled = false
+    plugin.lookup = async () => {
+      dnsCalled = true
+    }
+    await plugin.eachActiveDnsList(connection, 'fake.zone', () => {})
+    assert.strictEqual(dnsCalled, false)
+    assert.ok(
+      connection.results.get(plugin).skip.some((s) => /ipv6 disabled/.test(s)),
+    )
+  })
+})
+
+describe('reject=false', () => {
+  it('records fail but does not DENY in search=all', async () => {
+    connection = fixtures.connection.createConnection()
+    connection.set('remote.ip', '127.0.0.2')
+    plugin.cfg.main.search = 'all'
+    plugin.cfg['informational.zone'] = { type: 'block', reject: false }
+    plugin.zones = new Set(['informational.zone'])
+    plugin.lookup = async () => ['127.0.0.2']
+    const [code, msg] = await new Promise((resolve) => {
+      plugin.onConnect((c, m) => resolve([c, m]), connection)
+    })
+    assert.strictEqual(code, undefined)
+    assert.strictEqual(msg, undefined)
+    assert.ok(
+      connection.results.get(plugin).fail.includes('informational.zone'),
+    )
+  })
+
+  it('does not DENY in search=first either', async () => {
+    connection = fixtures.connection.createConnection()
+    connection.set('remote.ip', '127.0.0.2')
+    plugin.cfg.main.search = 'first'
+    plugin.cfg['informational.zone'] = { type: 'block', reject: false }
+    plugin.zones = new Set(['informational.zone'])
+    plugin.lookup = async () => ['127.0.0.2']
+    const [code] = await new Promise((resolve) => {
+      plugin.onConnect((c, m) => resolve([c, m]), connection)
+    })
+    assert.strictEqual(code, undefined)
   })
 })

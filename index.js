@@ -1,9 +1,17 @@
 // dns-lists plugin
 
-const dnsPromises = require('dns').promises
+const dnsPromises = require('node:dns').promises
 const dns = new dnsPromises.Resolver({ timeout: 25000, tries: 1 })
-const net = require('net')
+const net = require('node:net')
 const net_utils = require('haraka-net-utils')
+
+// ::ffff:1.2.3.4 -> 1.2.3.4 ; pass-through otherwise. Node reports such
+// addresses as IPv6, which makes DNSBL queries reverse-nibble them.
+function normalizeIP(ip) {
+  if (!net.isIPv6(ip)) return ip
+  const m = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(ip)
+  return m && net.isIPv4(m[1]) ? m[1] : ip
+}
 
 let redis_client
 
@@ -85,7 +93,7 @@ exports.should_skip = function (connection) {
     return true
   }
 
-  if (this.zones.length === 0) {
+  if (this.zones.size === 0) {
     connection.results.add(this, { err: `no zones` })
     return true
   }
@@ -95,9 +103,14 @@ exports.should_skip = function (connection) {
 
 exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
   const type = this.getListType(zone)
+  const ip = normalizeIP(connection.remote.ip)
 
-  const ips = await this.lookup(connection.remote.ip, zone)
-  // console.log(`eachActiveDnsList ip ${connection.remote.ip} zone ${zone} type ${type} ips ${ips}`)
+  if (net.isIPv6(ip) && this.cfg[zone]?.ipv6 === false) {
+    connection.results.add(this, { skip: `${zone}: ipv6 disabled` })
+    return
+  }
+
+  const ips = await this.lookup(ip, zone)
 
   if (!ips) {
     if (type === 'block') connection.results.add(this, { pass: zone })
@@ -121,7 +134,9 @@ exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
       connection.results.add(this, { pass: zone })
     } else if (ips.includes('127.0.0.2')) {
       connection.results.add(this, { fail: zone })
-      if (this.cfg.main.search === 'first') nextOnce(DENY, [zone])
+      if (this.getListReject(zone) && this.cfg.main.search === 'first') {
+        nextOnce(DENY, [zone])
+      }
     } else {
       connection.results.add(this, { msg: zone })
     }
@@ -130,8 +145,9 @@ exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
 
   // type=block
   connection.results.add(this, { fail: zone })
-  if (this.cfg.main.search === 'first') nextOnce(DENY, [zone])
-  return ips
+  if (this.getListReject(zone) && this.cfg.main.search === 'first') {
+    nextOnce(DENY, [zone])
+  }
 }
 
 exports.onConnect = function (next, connection) {
@@ -157,9 +173,10 @@ exports.onConnect = function (next, connection) {
   }
 
   Promise.all(promises).then(() => {
-    // console.log(`Promise.all`)
-    if (connection.results.get(this)?.fail?.length) {
-      nextOnce(DENY, connection.results.get(this).fail)
+    const failed = connection.results.get(this)?.fail || []
+    const rejectable = failed.filter((z) => this.getListReject(z))
+    if (rejectable.length) {
+      nextOnce(DENY, rejectable)
       return
     }
     nextOnce()
@@ -175,8 +192,13 @@ exports.check_backscatterer = async function (next, connection, params) {
   const user = params[0]?.user ? params[0].user.toLowerCase() : null
   if (!(!user || user === 'postmaster')) return next()
 
+  const ip = normalizeIP(connection.remote.ip)
+  if (net.isIPv6(ip) && this.cfg['ips.backscatterer.org'].ipv6 === false) {
+    return next()
+  }
+
   try {
-    const a = await this.lookup(connection.remote.ip, 'ips.backscatterer.org')
+    const a = await this.lookup(ip, 'ips.backscatterer.org')
     if (a)
       return next(
         DENY,
@@ -188,7 +210,9 @@ exports.check_backscatterer = async function (next, connection, params) {
   next()
 }
 
-function ipQuery(ip, zone) {
+exports.ipQuery = function (ip, zone) {
+  ip = normalizeIP(ip)
+
   // ::FFFF:7F00:2 -> 2.0.0.0.0.0.f.7.f.f.f.f.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.$zone.
   if (net.isIPv6(ip)) return [net_utils.ipv6_reverse(ip), zone, ''].join('.')
 
@@ -196,7 +220,7 @@ function ipQuery(ip, zone) {
   if (net.isIPv4(ip))
     return [ip.split('.').reverse().join('.'), zone, ''].join('.')
 
-  throw new Error('invalid IP: ${ip}')
+  throw new Error(`invalid IP: ${ip}`)
 }
 
 exports.lookup = async function (ip, zone) {
@@ -209,28 +233,25 @@ exports.lookup = async function (ip, zone) {
   }
 
   try {
-    const query = ipQuery(ip, zone)
+    const query = this.ipQuery(ip, zone)
     const a = await dns.resolve4(query, 'A')
-    // console.log(`lookup ${query} -> a: ${a}`)
 
-    this.stats_incr_zone(null, zone, start) // Statistics
+    this.stats_incr_zone(null, zone, start)
 
     if (this.hasSpecialResults(zone, a)) return
 
     return a
   } catch (err) {
-    this.stats_incr_zone(err, zone, start) // Statistics
+    this.stats_incr_zone(err, zone, start)
 
     if (err.code === dnsPromises.NOTFOUND) return // unlisted, not an error
 
     if (err.code === dnsPromises.TIMEOUT) {
-      // list timed out
-      this.disable_zone(zone, err.code) // disable it
+      this.disable_zone(zone, err.code)
       return
     }
 
-    console.error(`err: ${err}`)
-    // throw err
+    this.logerror(`${zone} lookup error: ${err}`)
   }
 }
 
@@ -317,24 +338,14 @@ exports.checkZonePositive = async function (zone, ip) {
   // RFC 5782 § 5
   // IPv4-based DNSxLs MUST contain an entry for 127.0.0.2 for testing purposes.
 
-  const query = ipQuery(ip, zone)
+  const query = this.ipQuery(ip, zone)
   try {
     const a = await dns.resolve4(query, 'A')
-    if (a) {
-      // const txt = await dns.resolve4(query, 'TXT')
-      // console.log(`${query} -> ${a}\t${txt}`)
-      for (const e of a) {
-        if (this.cfg[zone] && this.cfg[zone][e]) {
-          // console.log(this.cfg[zone][e]); //
-        }
-      }
-      return true
-    } else {
-      this.logwarn(`${query}\tno response`)
-      this.disable_zone(zone, a)
-    }
+    if (a) return true
+    this.logwarn(`${query}\tno response`)
+    this.disable_zone(zone, a)
   } catch (err) {
-    console.error(`${query} -> ${err}`)
+    this.logerror(`${query} -> ${err}`)
   }
   return false
 }
@@ -346,23 +357,19 @@ exports.checkZoneNegative = async function (zone, ip) {
   // skip this test for DNS lists that don't follow the RFC
   if (this.cfg[zone]?.loopback_is_rejected) return true
 
-  const query = ipQuery(ip, zone)
+  const query = this.ipQuery(ip, zone)
   try {
     const a = await dns.resolve4(query, 'A')
-    if (a) {
-      // results here are invalid
-      // const txt = await dns.resolve4(query, 'TXT')
-      // if (txt && txt !== a) console.warn(`${query} -> ${a}\t${txt}`)
-      this.disable_zone(zone, a)
-    }
+    if (a) this.disable_zone(zone, a) // listing 127.0.0.1 is invalid per RFC
   } catch (err) {
     switch (err.code) {
       case dnsPromises.NOTFOUND: // IP not listed
         return true
       case dnsPromises.TIMEOUT: // list timed out
         this.disable_zone(zone, err.code)
+        return false
     }
-    console.error(`${query} -> got err ${err}`)
+    this.logerror(`${query} -> got err ${err}`)
   }
   return false
 }
@@ -420,7 +427,7 @@ exports.enable_zone = function (zone) {
 
   if (!this.zones.has(zone)) {
     this.loginfo(`enabling ${type} zone ${zone}`)
-    this.zones.add(zone, true)
+    this.zones.add(zone)
   }
 }
 

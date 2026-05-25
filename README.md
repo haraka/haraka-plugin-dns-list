@@ -39,7 +39,7 @@ cp node_modules/haraka-plugin-dns-list/config/dns-list.ini config/dns-list.ini
 $EDITOR config/dns-list.ini
 ```
 
-dns-lists.ini - INI format with options described below:
+dns-list.ini - INI format with options described below:
 
 #### [main] periodic_checks=30
 
