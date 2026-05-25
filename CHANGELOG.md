@@ -4,6 +4,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
+- dep(eslint): upgrade to v10
+- change: test runner is now node:test
+
 ### [1.2.4] - 2025-03-28
 
 - remove SORBS.net (#14)
