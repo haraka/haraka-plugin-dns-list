@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Unreleased
 
+### [1.3.0] - 2026-05-24
+
+- fix: honor per-zone `reject=false` so block lists can be informational
+- fix: normalize IPv4-mapped IPv6 (`::ffff:a.b.c.d`) before DNSBL lookup
+- fix: enforce per-zone `ipv6=false` on live lookups, not just self-tests
+- fix: empty-zones check now uses `Set.size` (was always-false `.length`)
+- fix: `invalid IP` error message now interpolates the IP
+- fix: route lookup errors through `logerror` instead of `console.error`
+- doc(README): correct config filename to `dns-list.ini`
+- dep(eslint): upgrade to v10
+- change: test runner is now node:test
+- remove done callbacks in async tests #16
+
 ### [1.2.4] - 2025-03-28
 
 - remove SORBS.net (#14)
@@ -59,3 +72,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 [1.2.2]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.2
 [1.2.3]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.3
 [1.2.4]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.2.4
+[1.3.0]: https://github.com/haraka/haraka-plugin-dns-list/releases/tag/v1.3.0
