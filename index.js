@@ -80,6 +80,12 @@ exports.load_config = function () {
   } else {
     this.zones = new Set() // populated by check_zones()
   }
+
+  // zones that responded with a rate-limit code (e.g. Spamhaus 127.255.255.x
+  // when queried from a public/cloud resolver). Surfaced separately from
+  // disabled zones so tests + callers can distinguish "blocked from this
+  // network" from "list is broken" or "not listed".
+  this.rate_limited = new Set()
 }
 
 exports.should_skip = function (connection) {
@@ -113,7 +119,11 @@ exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
   const ips = await this.lookup(ip, zone)
 
   if (!ips) {
-    if (type === 'block') connection.results.add(this, { pass: zone })
+    if (this.rate_limited.has(zone)) {
+      connection.results.add(this, { skip: `rate_limited:${zone}` })
+    } else if (type === 'block') {
+      connection.results.add(this, { pass: zone })
+    }
     return
   }
 
@@ -275,6 +285,7 @@ exports.hasSpecialResults = function (zone, a) {
       a?.includes('127.255.255.254') ||
       a?.includes('127.255.255.255')
     ) {
+      this.rate_limited?.add(zone)
       this.disable_zone(zone, a)
       return true
     }
