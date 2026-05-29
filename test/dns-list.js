@@ -8,19 +8,23 @@ const { callHook, makeConnection, makePlugin } = require('haraka-test-fixtures')
 let plugin
 let connection
 
-// Spamhaus blocks queries from public/cloud DNS resolvers and returns a
-// rate-limit code (127.255.255.252/254/255) instead of real data. GitHub-hosted
-// macOS runners (Azure infrastructure) are in that bucket and will see the
-// block deterministically. Probe once and skip the Spamhaus-dependent tests
-// when the network can't reach a real answer.
+// Spamhaus refuses queries from public/cloud DNS resolvers. Sometimes it
+// returns a rate-limit code (127.255.255.252/254/255); other times the
+// network gets NXDOMAIN / SERVFAIL / a quiet timeout. GitHub-hosted macOS
+// runners (Azure infrastructure) are deterministically blocked. Probe with
+// the canonical test IP 127.0.0.2 and consider Spamhaus reachable only when
+// we get the expected positive answer back — that's the only signal that
+// covers every failure mode.
 // https://www.spamhaus.org/news/article/807/using-our-public-mirrors-check-your-return-codes-now
-let spamhausReachable = true
+let spamhausReachable = false
+let spamhausRateLimited = false
 
 before(async () => {
   const probe = makePlugin('index', { register: false })
   probe.load_config()
-  await probe.lookup('127.0.0.2', 'xbl.spamhaus.org')
-  spamhausReachable = !probe.rate_limited.has('xbl.spamhaus.org')
+  const result = await probe.lookup('127.0.0.2', 'xbl.spamhaus.org')
+  spamhausReachable = Array.isArray(result) && result.length > 0
+  spamhausRateLimited = probe.rate_limited.has('xbl.spamhaus.org')
 })
 
 beforeEach(() => {
@@ -33,7 +37,11 @@ beforeEach(() => {
 // so each caller must `if (skipUnlessSpamhaus(t)) return`.
 const skipUnlessSpamhaus = (t) => {
   if (spamhausReachable) return false
-  t.skip('Spamhaus rate-limits this network')
+  t.skip(
+    spamhausRateLimited
+      ? 'Spamhaus rate-limits this network'
+      : 'Spamhaus not reachable',
+  )
   return true
 }
 
@@ -175,8 +183,8 @@ describe('onConnect', () => {
   })
 
   it('rate-limited Spamhaus zone records skip:rate_limited', async (t) => {
-    if (spamhausReachable) {
-      t.skip('only runs when Spamhaus rate-limits us')
+    if (!spamhausRateLimited) {
+      t.skip('only runs when Spamhaus returns a rate-limit code')
       return
     }
     connection.set('remote.ip', '127.0.0.2')
