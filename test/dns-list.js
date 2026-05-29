@@ -3,13 +3,13 @@ const assert = require('node:assert')
 const { describe, it, beforeEach } = require('node:test')
 
 // npm modules
-const fixtures = require('haraka-test-fixtures')
+const { callHook, makeConnection, makePlugin } = require('haraka-test-fixtures')
 
 let plugin
 let connection
 
 beforeEach(() => {
-  plugin = new fixtures.plugin('index')
+  plugin = makePlugin('index', { register: false })
   plugin.load_config()
   // plugin.register()
 })
@@ -30,13 +30,12 @@ describe('dns-list', () => {
   })
 
   it('sets up a connection', () => {
-    connection = fixtures.connection.createConnection({})
+    connection = makeConnection({})
     assert.ok(connection.server)
   })
 
   it('sets up a transaction', () => {
-    connection = fixtures.connection.createConnection({})
-    connection.init_transaction()
+    connection = makeConnection({ withTxn: true })
     assert.ok(connection.transaction.header)
   })
 })
@@ -62,7 +61,7 @@ describe('lookup', () => {
     assert.deepStrictEqual(undefined, a)
   })
 
-  it('CBL', async () => {
+  it('CBL', { timeout: 3000 }, async () => {
     const a = await plugin.lookup('127.0.0.2', 'xbl.spamhaus.org')
     assert.deepStrictEqual(a, ['127.0.0.4'])
   })
@@ -74,15 +73,19 @@ describe('check_zone', () => {
     assert.deepStrictEqual(r, true)
   })
 
-  it('tests DNS list zen.spamhaus.org', async () => {
+  it('tests DNS list zen.spamhaus.org', { timeout: 3000 }, async () => {
     const r = await plugin.check_zone('zen.spamhaus.org')
     assert.deepStrictEqual(r, true)
   })
 
-  it('tests DNS list hostkarma.junkemailfilter.com', async () => {
-    const r = await plugin.check_zone('hostkarma.junkemailfilter.com')
-    assert.deepStrictEqual(r, true)
-  })
+  it(
+    'tests DNS list hostkarma.junkemailfilter.com',
+    { timeout: 3000 },
+    async () => {
+      const r = await plugin.check_zone('hostkarma.junkemailfilter.com')
+      assert.deepStrictEqual(r, true)
+    },
+  )
 })
 
 describe('check_zones', { timeout: 29000 }, () => {
@@ -93,69 +96,44 @@ describe('check_zones', { timeout: 29000 }, () => {
 
 describe('onConnect', () => {
   beforeEach(() => {
-    connection = fixtures.connection.createConnection()
+    connection = makeConnection()
   })
 
   it('onConnect 127.0.0.1', async () => {
     connection.set('remote.ip', '127.0.0.1')
     plugin.zones = new Set(['bl.spamcop.net', 'list.dnswl.org'])
-    await new Promise((resolve) => {
-      plugin.onConnect((code, msg) => {
-        assert.strictEqual(code, undefined)
-        assert.strictEqual(msg, undefined)
-        resolve()
-      }, connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
+    assert.strictEqual(code, undefined)
+    assert.strictEqual(msg, undefined)
   })
 
   it('onConnect 127.0.0.2', async () => {
     connection.set('remote.ip', '127.0.0.2')
     plugin.zones = new Set(['bl.spamcop.net', 'list.dnswl.org'])
-    await new Promise((resolve) => {
-      plugin.onConnect((code, msg) => {
-        // console.log(`code: ${code}, ${msg}`)
-        if (code === OK) {
-          assert.strictEqual(code, OK)
-          assert.strictEqual(
-            msg,
-            'host [127.0.0.2] is listed on list.dnswl.org',
-          )
-        } else {
-          assert.strictEqual(code, DENY)
-          assert.strictEqual(
-            msg,
-            'host [127.0.0.2] is listed on bl.spamcop.net',
-          )
-        }
-        resolve()
-      }, connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
+    if (code === OK) {
+      assert.strictEqual(code, OK)
+      assert.strictEqual(msg, 'host [127.0.0.2] is listed on list.dnswl.org')
+    } else {
+      assert.strictEqual(code, DENY)
+      assert.strictEqual(msg, 'host [127.0.0.2] is listed on bl.spamcop.net')
+    }
   })
 
   it('Spamcop + CBL', async () => {
     connection.set('remote.ip', '127.0.0.2')
     plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
-    await new Promise((resolve) => {
-      plugin.onConnect((code, msg) => {
-        // console.log(`code: ${code}, ${msg}`)
-        assert.strictEqual(code, DENY)
-        assert.ok(/is listed on/.test(msg))
-        resolve()
-      }, connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
+    assert.strictEqual(code, DENY)
+    assert.ok(/is listed on/.test(msg))
   })
 
   it('Spamcop + CBL + negative result', async () => {
     connection.set('remote.ip', '127.0.0.1')
     plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
-    await new Promise((resolve) => {
-      plugin.onConnect((code, msg) => {
-        // console.log(`test return ${code} ${msg}`)
-        assert.strictEqual(code, undefined)
-        assert.strictEqual(msg, undefined)
-        resolve()
-      }, connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
+    assert.strictEqual(code, undefined)
+    assert.strictEqual(msg, undefined)
   })
 
   it('IPv6 addresses supported', async () => {
@@ -175,31 +153,21 @@ describe('first', () => {
   beforeEach(() => {
     plugin.cfg.main.search = 'first'
     plugin.zones = new Set(['xbl.spamhaus.org', 'bl.spamcop.net'])
-    connection = fixtures.connection.createConnection()
+    connection = makeConnection()
   })
 
   it('positive result', async () => {
     connection.set('remote.ip', '127.0.0.2')
-    await new Promise((resolve) => {
-      plugin.onConnect((code, msg) => {
-        // console.log(`onConnect return ${code} ${msg}`)
-        assert.strictEqual(code, DENY)
-        assert.ok(/is listed on/.test(msg))
-        resolve()
-      }, connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
+    assert.strictEqual(code, DENY)
+    assert.ok(/is listed on/.test(msg))
   })
 
   it('negative result', async () => {
     connection.set('remote.ip', '127.0.0.1')
-    await new Promise((resolve) => {
-      plugin.onConnect((code, msg) => {
-        // console.log(`test return ${code} ${msg}`)
-        assert.strictEqual(code, undefined)
-        assert.strictEqual(msg, undefined)
-        resolve()
-      }, connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
+    assert.strictEqual(code, undefined)
+    assert.strictEqual(msg, undefined)
   })
 })
 
@@ -251,7 +219,7 @@ describe('ipQuery', () => {
 
 describe('should_skip', () => {
   it('records err when zones set is empty', () => {
-    connection = fixtures.connection.createConnection()
+    connection = makeConnection()
     plugin.zones = new Set()
     assert.strictEqual(plugin.should_skip(connection), true)
     assert.ok(
@@ -262,7 +230,7 @@ describe('should_skip', () => {
 
 describe('eachActiveDnsList ipv6 policy', () => {
   it('skips IPv6 client on a zone with ipv6=false', async () => {
-    connection = fixtures.connection.createConnection()
+    connection = makeConnection()
     connection.set('remote.ip', '2001:db8::1')
     plugin.cfg['fake.zone'] = { ipv6: false }
     let dnsCalled = false
@@ -279,15 +247,13 @@ describe('eachActiveDnsList ipv6 policy', () => {
 
 describe('reject=false', () => {
   it('records fail but does not DENY in search=all', async () => {
-    connection = fixtures.connection.createConnection()
+    connection = makeConnection()
     connection.set('remote.ip', '127.0.0.2')
     plugin.cfg.main.search = 'all'
     plugin.cfg['informational.zone'] = { type: 'block', reject: false }
     plugin.zones = new Set(['informational.zone'])
     plugin.lookup = async () => ['127.0.0.2']
-    const [code, msg] = await new Promise((resolve) => {
-      plugin.onConnect((c, m) => resolve([c, m]), connection)
-    })
+    const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
     assert.strictEqual(code, undefined)
     assert.strictEqual(msg, undefined)
     assert.ok(
@@ -296,15 +262,13 @@ describe('reject=false', () => {
   })
 
   it('does not DENY in search=first either', async () => {
-    connection = fixtures.connection.createConnection()
+    connection = makeConnection()
     connection.set('remote.ip', '127.0.0.2')
     plugin.cfg.main.search = 'first'
     plugin.cfg['informational.zone'] = { type: 'block', reject: false }
     plugin.zones = new Set(['informational.zone'])
     plugin.lookup = async () => ['127.0.0.2']
-    const [code] = await new Promise((resolve) => {
-      plugin.onConnect((c, m) => resolve([c, m]), connection)
-    })
+    const { rc: code } = await callHook(plugin, 'onConnect', connection)
     assert.strictEqual(code, undefined)
   })
 })
