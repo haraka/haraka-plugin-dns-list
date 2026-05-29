@@ -43,7 +43,7 @@
     "haraka-test-fixtures": "^1.7.0"
   },
   "dependencies": {
-    "haraka-net-utils": "^1.8.2"
+    "haraka-net-utils": "^1.9.0"
   },
   "prettier": {
     "singleQuote": true,
