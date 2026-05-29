@@ -1,7 +1,6 @@
-[![CI Test Status][ci-img]][ci-url]
-[![Code Climate][clim-img]][clim-url]
-
 # haraka-plugin-dns-list
+
+[![Test][ci-img]][ci-url] [![Cover][cov-img]][cov-url] [![Qlty][qlty-img]][qlty-url]
 
 ## dns lists
 
@@ -109,12 +108,16 @@ ok_mail=false
 
 if DNSBL returns OK on the mail hook, it prevents any subsequent mail hooks in other plugins from running. This might include [SPF][5], [known senders][4], [karma][3], recipient plugins, and any other plugins that want to do transaction initialization on `hook_mail`. It can be dangerous.
 
+<!-- leave these buried at the bottom of the document -->
+
+[ci-img]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml
+[cov-img]: https://codecov.io/github/haraka/haraka-plugin-dns-list/coverage.svg
+[cov-url]: https://codecov.io/github/haraka/haraka-plugin-dns-list
+[qlty-img]: https://qlty.sh/gh/haraka/projects/haraka-plugin-dns-list/maintainability.svg
+[qlty-url]: https://qlty.sh/gh/haraka/projects/haraka-plugin-dns-list
 [1]: https://github.com/haraka/haraka-plugin-redis
 [2]: https://hostkarma.junkemailfilter.com
 [3]: https://github.com/haraka/haraka-plugin-karma
 [4]: https://github.com/haraka/haraka-plugin-known-senders
 [5]: https://github.com/haraka/haraka-plugin-spf
-[ci-img]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/haraka/haraka-plugin-dns-list/actions/workflows/ci.yml
-[clim-img]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list/badges/gpa.svg
-[clim-url]: https://codeclimate.com/github/haraka/haraka-plugin-dns-list
