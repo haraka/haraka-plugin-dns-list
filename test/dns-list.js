@@ -1,6 +1,6 @@
 // node.js built-in modules
 const assert = require('node:assert')
-const { describe, it, beforeEach } = require('node:test')
+const { before, describe, it, beforeEach } = require('node:test')
 
 // npm modules
 const { callHook, makeConnection, makePlugin } = require('haraka-test-fixtures')
@@ -8,11 +8,42 @@ const { callHook, makeConnection, makePlugin } = require('haraka-test-fixtures')
 let plugin
 let connection
 
+// Spamhaus refuses queries from public/cloud DNS resolvers. Sometimes it
+// returns a rate-limit code (127.255.255.252/254/255); other times the
+// network gets NXDOMAIN / SERVFAIL / a quiet timeout. GitHub-hosted macOS
+// runners (Azure infrastructure) are deterministically blocked. Probe with
+// the canonical test IP 127.0.0.2 and consider Spamhaus reachable only when
+// we get the expected positive answer back — that's the only signal that
+// covers every failure mode.
+// https://www.spamhaus.org/news/article/807/using-our-public-mirrors-check-your-return-codes-now
+let spamhausReachable = false
+let spamhausRateLimited = false
+
+before(async () => {
+  const probe = makePlugin('index', { register: false })
+  probe.load_config()
+  const result = await probe.lookup('127.0.0.2', 'xbl.spamhaus.org')
+  spamhausReachable = Array.isArray(result) && result.length > 0
+  spamhausRateLimited = probe.rate_limited.has('xbl.spamhaus.org')
+})
+
 beforeEach(() => {
   plugin = makePlugin('index', { register: false })
   plugin.load_config()
   // plugin.register()
 })
+
+// node:test's t.skip() marks the test as skipped but doesn't halt execution,
+// so each caller must `if (skipUnlessSpamhaus(t)) return`.
+const skipUnlessSpamhaus = (t) => {
+  if (spamhausReachable) return false
+  t.skip(
+    spamhausRateLimited
+      ? 'Spamhaus rate-limits this network'
+      : 'Spamhaus not reachable',
+  )
+  return true
+}
 
 describe('dns-list', () => {
   it('plugin loads', () => {
@@ -61,7 +92,8 @@ describe('lookup', () => {
     assert.deepStrictEqual(undefined, a)
   })
 
-  it('CBL', { timeout: 3000 }, async () => {
+  it('CBL', { timeout: 3000 }, async (t) => {
+    if (skipUnlessSpamhaus(t)) return
     const a = await plugin.lookup('127.0.0.2', 'xbl.spamhaus.org')
     assert.deepStrictEqual(a, ['127.0.0.4'])
   })
@@ -73,7 +105,8 @@ describe('check_zone', () => {
     assert.deepStrictEqual(r, true)
   })
 
-  it('tests DNS list zen.spamhaus.org', { timeout: 3000 }, async () => {
+  it('tests DNS list zen.spamhaus.org', { timeout: 3000 }, async (t) => {
+    if (skipUnlessSpamhaus(t)) return
     const r = await plugin.check_zone('zen.spamhaus.org')
     assert.deepStrictEqual(r, true)
   })
@@ -120,7 +153,8 @@ describe('onConnect', () => {
     }
   })
 
-  it('Spamcop + CBL', async () => {
+  it('Spamcop + CBL', async (t) => {
+    if (skipUnlessSpamhaus(t)) return
     connection.set('remote.ip', '127.0.0.2')
     plugin.zones = new Set(['bl.spamcop.net', 'xbl.spamhaus.org'])
     const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
@@ -147,6 +181,21 @@ describe('onConnect', () => {
       }, connection)
     })
   })
+
+  it('rate-limited Spamhaus zone records skip:rate_limited', async (t) => {
+    if (!spamhausRateLimited) {
+      t.skip('only runs when Spamhaus returns a rate-limit code')
+      return
+    }
+    connection.set('remote.ip', '127.0.0.2')
+    plugin.zones = new Set(['xbl.spamhaus.org'])
+    const { rc: code } = await callHook(plugin, 'onConnect', connection)
+    assert.strictEqual(code, undefined)
+    assert.ok(
+      connection.results.get(plugin).skip.some((s) => /^rate_limited:/.test(s)),
+      'expected skip:rate_limited: result',
+    )
+  })
 })
 
 describe('first', () => {
@@ -156,7 +205,8 @@ describe('first', () => {
     connection = makeConnection()
   })
 
-  it('positive result', async () => {
+  it('positive result', async (t) => {
+    if (skipUnlessSpamhaus(t)) return
     connection.set('remote.ip', '127.0.0.2')
     const { rc: code, msg } = await callHook(plugin, 'onConnect', connection)
     assert.strictEqual(code, DENY)

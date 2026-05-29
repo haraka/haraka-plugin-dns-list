@@ -80,6 +80,12 @@ exports.load_config = function () {
   } else {
     this.zones = new Set() // populated by check_zones()
   }
+
+  // zones that responded with a rate-limit code (e.g. Spamhaus 127.255.255.x
+  // when queried from a public/cloud resolver). Surfaced separately from
+  // disabled zones so tests + callers can distinguish "blocked from this
+  // network" from "list is broken" or "not listed".
+  this.rate_limited = new Set()
 }
 
 exports.should_skip = function (connection) {
@@ -102,7 +108,6 @@ exports.should_skip = function (connection) {
 }
 
 exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
-  const type = this.getListType(zone)
   const ip = normalizeIP(connection.remote.ip)
 
   if (net.isIPv6(ip) && this.cfg[zone]?.ipv6 === false) {
@@ -111,40 +116,56 @@ exports.eachActiveDnsList = async function (connection, zone, nextOnce) {
   }
 
   const ips = await this.lookup(ip, zone)
-
-  if (!ips) {
-    if (type === 'block') connection.results.add(this, { pass: zone })
-    return
-  }
+  if (!ips) return this.handleNoLookupResult(connection, zone)
 
   for (const i of ips) {
-    if (this.cfg[zone] && this.cfg[zone][i]) {
+    if (this.cfg[zone]?.[i])
       connection.results.add(this, { msg: this.cfg[zone][i] })
-    }
   }
 
-  if (type === 'allow') {
-    connection.notes.dnswl = true
-    connection.results.add(this, { pass: zone })
-    return nextOnce(OK, [zone])
-  }
+  const type = this.getListType(zone)
+  if (type === 'allow') return this.handleAllowMatch(connection, zone, nextOnce)
+  if (type === 'karma')
+    return this.handleKarmaMatch(connection, zone, ips, nextOnce)
+  this.handleBlockMatch(connection, zone, nextOnce)
+}
 
-  if (type === 'karma') {
-    if (ips.includes('127.0.0.1')) {
-      connection.results.add(this, { pass: zone })
-    } else if (ips.includes('127.0.0.2')) {
-      connection.results.add(this, { fail: zone })
-      if (this.getListReject(zone) && this.cfg.main.search === 'first') {
-        nextOnce(DENY, [zone])
-      }
-    } else {
-      connection.results.add(this, { msg: zone })
-    }
+exports.handleNoLookupResult = function (connection, zone) {
+  if (this.rate_limited.has(zone)) {
+    connection.results.add(this, { skip: `rate_limited:${zone}` })
     return
   }
+  if (this.getListType(zone) === 'block')
+    connection.results.add(this, { pass: zone })
+}
 
-  // type=block
+exports.handleAllowMatch = function (connection, zone, nextOnce) {
+  connection.notes.dnswl = true
+  connection.results.add(this, { pass: zone })
+  nextOnce(OK, [zone])
+}
+
+exports.handleKarmaMatch = function (connection, zone, ips, nextOnce) {
+  if (ips.includes('127.0.0.1')) {
+    connection.results.add(this, { pass: zone })
+    return
+  }
+  if (ips.includes('127.0.0.2')) {
+    connection.results.add(this, { fail: zone })
+    this.maybeRejectFirst(zone, nextOnce)
+    return
+  }
+  connection.results.add(this, { msg: zone })
+}
+
+exports.handleBlockMatch = function (connection, zone, nextOnce) {
   connection.results.add(this, { fail: zone })
+  this.maybeRejectFirst(zone, nextOnce)
+}
+
+// When search=first and the zone is configured to reject, signal nextOnce
+// to short-circuit the remaining lookups with a DENY.
+exports.maybeRejectFirst = function (zone, nextOnce) {
   if (this.getListReject(zone) && this.cfg.main.search === 'first') {
     nextOnce(DENY, [zone])
   }
@@ -275,6 +296,7 @@ exports.hasSpecialResults = function (zone, a) {
       a?.includes('127.255.255.254') ||
       a?.includes('127.255.255.255')
     ) {
+      this.rate_limited?.add(zone)
       this.disable_zone(zone, a)
       return true
     }
